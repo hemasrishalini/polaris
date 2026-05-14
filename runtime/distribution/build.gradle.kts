@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 import licenses.LicenseNoticeMerge
 import publishing.PublishingHelperPlugin
 import publishing.digestTaskOutputs
@@ -36,7 +35,6 @@ apply<PublishingHelperPlugin>()
 val adminProject = project(":polaris-admin")
 val serverProject = project(":polaris-server")
 
-// Configurations to resolve artifacts from other projects
 val adminDistribution by
   configurations.creating {
     isCanBeConsumed = false
@@ -71,18 +69,12 @@ distributions {
   main {
     distributionBaseName.set("polaris-bin")
     contents {
-      // Copy admin distribution contents
       into("admin") { from(adminDistribution) { exclude("quarkus-app-dependencies.txt") } }
-
-      // Copy server distribution contents
       into("server") { from(serverDistribution) { exclude("quarkus-app-dependencies.txt") } }
-
-      // Copy scripts to bin directory
       into("bin") {
         from("bin/server")
         from("bin/admin")
       }
-
       from("README.md")
       from(licenseNoticeMerge)
     }
@@ -92,6 +84,55 @@ distributions {
 val distTar = tasks.named<Tar>("distTar") { compression = Compression.GZIP }
 
 val distZip = tasks.named<Zip>("distZip") {}
+
+val validateDistributionLicenseNotice by
+  tasks.registering {
+    dependsOn(distTar, distZip)
+
+    doLast {
+      // --- Validate ZIP ---
+      val zipFile = distZip.get().archiveFile.get().asFile
+      if (!zipFile.exists()) {
+        throw GradleException("Distribution zip archive was not created: ${zipFile.path}")
+      }
+      val zipEntries = mutableListOf<String>()
+      java.util.zip.ZipFile(zipFile).use { zip ->
+        zip.entries().asSequence().forEach { zipEntries.add(it.name) }
+      }
+      if (zipEntries.none { it.endsWith("/LICENSE") || it == "LICENSE" }) {
+        throw GradleException("LICENSE file is missing inside ${zipFile.name}")
+      }
+      if (zipEntries.none { it.endsWith("/NOTICE") || it == "NOTICE" }) {
+        throw GradleException("NOTICE file is missing inside ${zipFile.name}")
+      }
+
+      // --- Validate TAR (uses Gradle's built-in Ant tar classes, no extra dependency needed) ---
+      val tarFile = distTar.get().archiveFile.get().asFile
+      if (!tarFile.exists()) {
+        throw GradleException("Distribution tar archive was not created: ${tarFile.path}")
+      }
+      val tarEntries = mutableListOf<String>()
+      java.util.zip.GZIPInputStream(tarFile.inputStream()).use { gzip ->
+        org.apache.tools.tar.TarInputStream(gzip).use { tar ->
+          var entry = tar.nextEntry
+          while (entry != null) {
+            tarEntries.add(entry.name)
+            entry = tar.nextEntry
+          }
+        }
+      }
+      if (tarEntries.none { it.endsWith("/LICENSE") || it == "LICENSE" }) {
+        throw GradleException("LICENSE file is missing inside ${tarFile.name}")
+      }
+      if (tarEntries.none { it.endsWith("/NOTICE") || it == "NOTICE" }) {
+        throw GradleException("NOTICE file is missing inside ${tarFile.name}")
+      }
+
+      logger.lifecycle("LICENSE and NOTICE validated successfully in both ZIP and TAR archives.")
+    }
+  }
+
+tasks.named("check").configure { dependsOn(validateDistributionLicenseNotice) }
 
 digestTaskOutputs(distTar)
 
