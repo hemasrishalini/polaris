@@ -589,7 +589,15 @@ class SetupCommand(Command):
         details: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Helper for logging dry-run actions."""
-        message = f"DRY-RUN: Would {action} {entity_type} {entity_name}"
+        message = (
+            "\n"
+            "========================================\n"
+            "DRY-RUN\n"
+            "========================================\n"
+            f"Action : {action}\n"
+            f"Type   : {entity_type}\n"
+            f"Name   : {entity_name}\n"
+        )
         if details:
             details_copy = details.copy()
             # Clean up empty fields for cleaner output
