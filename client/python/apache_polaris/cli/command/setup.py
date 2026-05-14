@@ -599,14 +599,19 @@ class SetupCommand(Command):
             f"Name   : {entity_name}\n"
         )
         if details:
-            details_copy = details.copy()
-            # Clean up empty fields for cleaner output
-            for key in [k for k, v in details_copy.items() if not v and v is not False]:
-                if key in details_copy:
-                    del details_copy[key]
-            if details_copy:
-                details_str = yaml.dump(details_copy, indent=2, sort_keys=False).strip()
-                message += f" with details:\n{details_str}"
+            details_copy = {k: v for k, v in details.copy().items() if v}
+
+            message += (
+                "----------------------------------------\n"
+                "Details\n"
+                "----------------------------------------\n"
+            )
+
+            for key, value in details_copy.items():
+                message += f"{key:<15}: {value}\n"
+
+        message += "========================================"
+            
         logger.info(message)
 
     def _create_principals(
