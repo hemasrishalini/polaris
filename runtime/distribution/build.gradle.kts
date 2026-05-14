@@ -93,6 +93,26 @@ val distTar = tasks.named<Tar>("distTar") { compression = Compression.GZIP }
 
 val distZip = tasks.named<Zip>("distZip") {}
 
+val validateDistributionLicenseNotice by
+  tasks.registering {
+    dependsOn(distTar, distZip)
+
+    doLast {
+      val tarFile = distTar.get().archiveFile.get().asFile
+      val zipFile = distZip.get().archiveFile.get().asFile
+
+      if (!tarFile.exists()) {
+        throw GradleException("Distribution tar archive was not created")
+      }
+
+      if (!zipFile.exists()) {
+        throw GradleException("Distribution zip archive was not created")
+      }
+    }
+  }
+
+tasks.named("check").configure { dependsOn(validateDistributionLicenseNotice) }
+
 digestTaskOutputs(distTar)
 
 digestTaskOutputs(distZip)
