@@ -599,19 +599,23 @@ class SetupCommand(Command):
             f"Name   : {entity_name}\n"
         )
         if details:
-            details_copy = {k: v for k, v in details.copy().items() if v}
+            details_copy = {
+                k: v for k, v in details.items()
+                if v is not None and v != ""
+            }
 
-            message += (
-                "----------------------------------------\n"
-                "Details\n"
-                "----------------------------------------\n"
-            )
+            if details_copy:
+                message += (
+                    "----------------------------------------\n"
+                    "Details\n"
+                    "----------------------------------------\n"
+                )
 
-            for key, value in details_copy.items():
-                message += f"{key:<15}: {value}\n"
+                for key, value in details_copy.items():
+                    message += f"{key:<15}: {value}\n"
 
-        message += "========================================"
-            
+        message += "\n========================================"
+
         logger.info(message)
 
     def _create_principals(
