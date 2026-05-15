@@ -600,8 +600,7 @@ class SetupCommand(Command):
         )
         if details:
             details_copy = {
-                k: v for k, v in details.items()
-                if v is not None and v != ""
+                k: v for k, v in details.items() if v is not None and v != ""
             }
 
             if details_copy:
