@@ -47,6 +47,21 @@ polaris.persistence.nosql.backend=MongoDb
 quarkus.mongodb.database=polaris
 quarkus.mongodb.connection-string=mongodb://<username>:<password>@<host>:<port>
 ```
+## Local MongoDB Setup
+
+You can start a local MongoDB instance for development or testing using Docker:
+
+```bash
+docker run -d --name polaris-mongo \
+  -p 27017:27017 \
+  mongo:7
+```
+
+Verify that the container is running:
+
+```bash
+docker ps
+```
 
 ## MongoDB Atlas Configuration
 
@@ -94,6 +109,13 @@ For more details on available MongoDB configuration options, please refer to the
 
 Before using Polaris with the MongoDB backend, you must bootstrap the metastore to create the necessary collections and initial realm. This is done using the [Admin Tool]({{% ref "../admin-tool" %}}).
 
+Build the Polaris admin tool before running the bootstrap command:
+
+```bash
+./gradlew :polaris-admin:build -x test
+```
+
+
 Using Docker:
 
 ```bash
@@ -104,6 +126,8 @@ docker run --rm -it \
   --env="quarkus.mongodb.connection-string=mongodb://<username>:<password>@<host>:<port>" \
   apache/polaris-admin-tool:latest bootstrap -r <realm-name> -c <realm-name>,<client-id>,<client-secret>
 ```
+
+
 
 Using the standalone JAR:
 
